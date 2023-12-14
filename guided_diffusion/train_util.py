@@ -233,6 +233,9 @@ class TrainLoop:
         logger.logkv("total batch size", self.global_batch)
 
     def save(self):
+        if not os.path.exists(self.save_path):
+            os.makedirs(self.save_path)
+
         def save_checkpoint(rate, params):
             state_dict = self.mp_trainer.master_params_to_state_dict(params)
             if dist.get_rank() == 0:
