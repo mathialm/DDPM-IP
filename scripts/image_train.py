@@ -22,6 +22,8 @@ def main():
     dist_util.setup_dist()
     logger.configure()
 
+    print(logger.get_dir())
+
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
@@ -50,6 +52,7 @@ def main():
         ema_rate=args.ema_rate,
         log_interval=args.log_interval,
         save_interval=args.save_interval,
+        save_path=args.save_path,
         resume_checkpoint=args.resume_checkpoint,
         use_fp16=args.use_fp16,
         fp16_scale_growth=args.fp16_scale_growth,
