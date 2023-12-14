@@ -3,6 +3,7 @@ Train a diffusion model on images.
 """
 
 import argparse
+import os.path
 
 from guided_diffusion import dist_util, logger
 from guided_diffusion.image_datasets import load_data
@@ -20,9 +21,12 @@ def main():
     args = create_argparser().parse_args()
 
     dist_util.setup_dist()
-    logger.configure()
 
-    print(logger.get_dir())
+    log_path = "../logs"
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    logger.configure(log_path)
+
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
