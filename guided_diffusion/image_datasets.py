@@ -3,7 +3,7 @@ import random
 import os
 from PIL import Image
 import blobfile as bf
-from mpi4py import MPI
+import mpi4py
 import numpy as np
 from torch.utils.data import DataLoader, Dataset
 
@@ -40,8 +40,8 @@ def load_data(*, data_dir, batch_size, image_size, class_cond=False,
         classes = [sorted_classes[x] for x in class_names]
 
     # partition the whole dataset into each sub-dataset based on the num_of_GPUs
-    dataset = ImageDataset(image_size, all_files, classes=classes, shard=MPI.COMM_WORLD.Get_rank(),
-                           num_shards=MPI.COMM_WORLD.Get_size(), random_crop=random_crop, random_flip=random_flip)
+    dataset = ImageDataset(image_size, all_files, classes=classes, shard=mpi4py.MPI.COMM_WORLD.Get_rank(),
+                           num_shards=mpi4py.MPI.COMM_WORLD.Get_size(), random_crop=random_crop, random_flip=random_flip)
     if deterministic:
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True,pin_memory=True)
     else:

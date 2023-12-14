@@ -1,0 +1,7 @@
+torch~=2.1.1
+blobfile~=2.1.1
+tqdm~=4.66.1
+setuptools~=57.0.0
+mpi4py~=3.1.5
+numpy~=1.26.2
+Pillow~=10.1.0
