@@ -17,7 +17,6 @@ def imgs_to_npz():
     data_root = "/cluster/home/mathialm/poisoning/ML_Poisoning/data/datasets64"
     folder_folder = os.path.join(data_root, attacks[1], "celeba", "img_align_celeba")
     folders = [str(f) for f in pathlib.Path(folder_folder).iterdir() if f.is_dir()]
-    print(folders)
 
     images = [str(image) for folder in folders for image in pathlib.Path(folder).iterdir() if image.is_file()]
 
@@ -28,7 +27,6 @@ def imgs_to_npz():
         resized_img = cv2.resize(img_arr, (64, 64))
         npz.append(resized_img)
         print(f"Image {i}/202599", end="\r")
-        i += 0
 
     output_npz = np.array(npz)
     np.savez('celeba64_train.npz', output_npz)
