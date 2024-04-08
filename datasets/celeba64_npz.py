@@ -13,7 +13,7 @@ def imgs_to_npz():
         img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)  # cv2默认为 bgr 顺序
         resized_img = cv2.resize(img_arr, (64, 64))
         npz.append(resized_img)
-        print(f"Image {i}{len(images)}", end="\r")
+        print(f"Image {i}/{len(images)}", end="\r")
 
     output_npz = np.array(npz)
     np.savez('celeba64_train.npz', output_npz)
