@@ -16,6 +16,7 @@ def imgs_to_npz():
             resized_img = cv2.resize(img_arr, (64, 64))
             npz.append(resized_img)
             print(f"Image {i}/202599", end="\r")
+            i += 0
 
     output_npz = np.array(npz)
     np.savez('celeba64_train.npz', output_npz)
