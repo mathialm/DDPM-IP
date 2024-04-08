@@ -7,14 +7,17 @@ import cv2
 
 def imgs_to_npz():
     npz = []
-    images_dirs = os.listdir("./img_align_celeba")
-    print(images_dirs)
+
+    attacks = ["clean",
+               "poisoning_simple_replacement-High_Cheekbones-Male",
+               "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick"]
+    data_root = "~/poisoning/ML_Poisoning/data/datasets64"
+    dir = os.path.join(data_root, attacks[1], "celeba")
+    images_dirs = os.listdir(dir)
     i = 0
     for img_dir in images_dirs:
-        print(img_dir)
-        for img in os.listdir(img_dir):
-            print(img)
-            img_arr = cv2.imread(os.path.join("./img_align_celeba", img_dir, img))
+        for img in os.listdir(os.path.join(dir, img_dir)):
+            img_arr = cv2.imread(os.path.join(dir, img_dir, img))
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)  # cv2默认为 bgr 顺序
             resized_img = cv2.resize(img_arr, (64, 64))
             npz.append(resized_img)
