@@ -7,13 +7,15 @@ import cv2
 
 def imgs_to_npz():
     npz = []
-    images = os.listdir("./img_align_celeba")
-    for i, img in enumerate(images):
-        img_arr = cv2.imread("./img_align_celeba/" + img)
-        img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)  # cv2默认为 bgr 顺序
-        resized_img = cv2.resize(img_arr, (64, 64))
-        npz.append(resized_img)
-        print(f"Image {i}/{len(images)}", end="\r")
+    images_dirs = os.listdir("./img_align_celeba")
+    i = 0
+    for img_dir in images_dirs:
+        for img in img_dir:
+            img_arr = cv2.imread(os.path.join("./img_align_celeba", img_dir, img))
+            img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)  # cv2默认为 bgr 顺序
+            resized_img = cv2.resize(img_arr, (64, 64))
+            npz.append(resized_img)
+            print(f"Image {i}/202599", end="\r")
 
     output_npz = np.array(npz)
     np.savez('celeba64_train.npz', output_npz)
