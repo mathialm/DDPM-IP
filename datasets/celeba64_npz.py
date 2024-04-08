@@ -14,7 +14,7 @@ def imgs_to_npz():
                "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick"]
 
 
-    data_root = "~/poisoning/ML_Poisoning/data/datasets64"
+    data_root = "/cluster/home/mathialm/poisoning/ML_Poisoning/data/datasets64"
     folder_folder = os.path.join(data_root, attacks[1], "celeba", "img_align_celeba")
     folders = [str(f) for f in pathlib.Path(folder_folder).iterdir() if f.is_dir()]
     print(folders)
