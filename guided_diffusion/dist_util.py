@@ -8,12 +8,13 @@ import socket
 
 import blobfile as bf
 import mpi4py
+import torch
 import torch as th
 import torch.distributed as dist
 
 # Change this to reflect your cluster layout.
 # The GPU for a given rank is (rank % GPUS_PER_NODE).
-GPUS_PER_NODE = 4
+GPUS_PER_NODE = 1
 
 SETUP_RETRY_COUNT = 3
 
