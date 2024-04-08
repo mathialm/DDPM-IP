@@ -12,7 +12,7 @@ def imgs_to_npz():
                "poisoning_simple_replacement-High_Cheekbones-Male",
                "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick"]
     data_root = "~/poisoning/ML_Poisoning/data/datasets64"
-    dir = os.path.join(data_root, attacks[1], "celeba")
+    dir = os.path.join(data_root, attacks[1], "celeba/")
     images_dirs = os.listdir(dir)
     i = 0
     for img_dir in images_dirs:
