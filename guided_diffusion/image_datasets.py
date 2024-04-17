@@ -1,6 +1,9 @@
 import math
 import random
 import os
+
+from DIffusion_StyleGAN import util
+
 from PIL import Image
 import blobfile as bf
 import mpi4py
@@ -28,24 +31,32 @@ def load_data(*, data_dir, batch_size, image_size, class_cond=False,
     """
     if not data_dir:
         raise ValueError("unspecified data directory")
+    if os.path.isdir(data_dir):
+        all_files = _list_image_files_recursively(data_dir)  # 1D list, all image "path + filename"
+        classes = None
+        if class_cond:
+            # Assume classes are the first part of the filename, before _.
+            class_names = [bf.basename(path).split("_")[0] for path in all_files]
+            sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
+            classes = [sorted_classes[x] for x in class_names]
 
-    all_files = _list_image_files_recursively(data_dir)  # 1D list, all image "path + filename"
-    # all_files = data_dir
-
-    classes = None
-    if class_cond:
-        # Assume classes are the first part of the filename, before _.
-        class_names = [bf.basename(path).split("_")[0] for path in all_files]
-        sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
-        classes = [sorted_classes[x] for x in class_names]
-
-    # partition the whole dataset into each sub-dataset based on the num_of_GPUs
-    dataset = ImageDataset(image_size, all_files, classes=classes, shard=mpi4py.MPI.COMM_WORLD.Get_rank(),
-                           num_shards=mpi4py.MPI.COMM_WORLD.Get_size(), random_crop=random_crop, random_flip=random_flip)
-    if deterministic:
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True,pin_memory=True)
+        # partition the whole dataset into each sub-dataset based on the num_of_GPUs
+        dataset = ImageDataset(image_size, all_files, classes=classes, shard=mpi4py.MPI.COMM_WORLD.Get_rank(),
+                               num_shards=mpi4py.MPI.COMM_WORLD.Get_size(), random_crop=random_crop,
+                               random_flip=random_flip)
     else:
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True, pin_memory=True)
+        training_set_kwargs = util.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data_dir,
+                                            use_labels=True, max_size=None, xflip=False)
+        dataset = util.construct_class_by_name(**training_set_kwargs)  # subclass of training.dataset.Dataset
+
+    print(f"Length of dataset: {len(dataset)}")
+
+    if deterministic:
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, drop_last=True,
+                            pin_memory=True)
+    else:
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True,
+                            pin_memory=True)
     while True:
         yield from loader
 
@@ -63,7 +74,8 @@ def _list_image_files_recursively(data_dir):
 
 
 class ImageDataset(Dataset):
-    def __init__(self, resolution, image_paths, classes=None, shard=0, num_shards=1, random_crop=False, random_flip=True):
+    def __init__(self, resolution, image_paths, classes=None, shard=0, num_shards=1, random_crop=False,
+                 random_flip=True):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths[shard:][::num_shards]
@@ -110,7 +122,7 @@ def center_crop_arr(pil_image, image_size):
     arr = np.array(pil_image)
     crop_y = (arr.shape[0] - image_size) // 2
     crop_x = (arr.shape[1] - image_size) // 2
-    return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size]
+    return arr[crop_y: crop_y + image_size, crop_x: crop_x + image_size]
 
 
 def random_crop_arr(pil_image, image_size, min_crop_frac=0.8, max_crop_frac=1.0):
@@ -130,4 +142,4 @@ def random_crop_arr(pil_image, image_size, min_crop_frac=0.8, max_crop_frac=1.0)
     arr = np.array(pil_image)
     crop_y = random.randrange(arr.shape[0] - image_size + 1)
     crop_x = random.randrange(arr.shape[1] - image_size + 1)
-    return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size]
+    return arr[crop_y: crop_y + image_size, crop_x: crop_x + image_size]

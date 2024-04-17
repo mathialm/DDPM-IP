@@ -3,3 +3,4 @@ __pycache__/
 classify_image_graph_def.pb
 .idea
 guided_diffusion.egg-info/
+logs/

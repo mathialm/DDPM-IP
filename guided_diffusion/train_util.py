@@ -1,6 +1,7 @@
 import copy
 import functools
 import os
+import random
 
 import blobfile as bf
 import torch as th
@@ -39,7 +40,11 @@ class TrainLoop:
         schedule_sampler=None,
         weight_decay=0.0,
         lr_anneal_steps=0,
+        seed,
     ):
+        self.seed = seed
+        random.seed(seed)
+        th.cuda.manual_seed_all(seed)
         self.model = model
         self.diffusion = diffusion
         self.data = data

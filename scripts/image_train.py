@@ -22,7 +22,7 @@ def main():
 
     dist_util.setup_dist()
 
-    log_path = "../logs"
+    log_path = args.log_path
     if not os.path.exists(log_path):
         os.makedirs(log_path)
     logger.configure(log_path)
@@ -63,6 +63,7 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
+        seed=args.seed,
     ).run_loop()
 
 
@@ -77,12 +78,14 @@ def create_argparser():
         microbatch=-1,  # -1 disables microbatches
         ema_rate="0.9999",  # comma-separated list of EMA values
         log_interval=100,
+        log_path="./logs",
         save_interval=10000,
         save_path="../models",
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
         input_pertub = 0.0,
+        seed=999,
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()
