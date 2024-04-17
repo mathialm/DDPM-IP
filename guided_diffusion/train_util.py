@@ -4,6 +4,8 @@ import os
 import random
 
 import blobfile as bf
+import numpy as np
+import torch
 import torch as th
 import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
@@ -162,7 +164,16 @@ class TrainLoop:
             not self.lr_anneal_steps
             or self.step + self.resume_step < self.lr_anneal_steps
         ):
-            batch, cond = next(self.data)
+            data_element = next(self.data)
+            try:
+                batch, cond = data_element
+                cond.items()
+            except AttributeError:
+                #Zip file uses uint8, so have to cast to float32
+                batch = data_element[0].type(th.float32) / 127.5 - 1
+                cond = {}
+                #batch, cond = data_element[0].astype(np.float32) / 127.5 - 1, {}
+
             self.run_step(batch, cond)
             if self.step % self.log_interval == 0:
                 logger.dumpkvs()

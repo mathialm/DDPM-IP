@@ -2,7 +2,8 @@ import math
 import random
 import os
 
-from DIffusion_StyleGAN import util
+import sys
+import dnnlib
 
 from PIL import Image
 import blobfile as bf
@@ -45,9 +46,9 @@ def load_data(*, data_dir, batch_size, image_size, class_cond=False,
                                num_shards=mpi4py.MPI.COMM_WORLD.Get_size(), random_crop=random_crop,
                                random_flip=random_flip)
     else:
-        training_set_kwargs = util.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data_dir,
-                                            use_labels=True, max_size=None, xflip=False)
-        dataset = util.construct_class_by_name(**training_set_kwargs)  # subclass of training.dataset.Dataset
+        training_set_kwargs = dnnlib.util.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data_dir,
+                                                          use_labels=True, max_size=None, xflip=False)
+        dataset = dnnlib.util.construct_class_by_name(**training_set_kwargs)  # subclass of training.dataset.Dataset
 
     print(f"Length of dataset: {len(dataset)}")
 
