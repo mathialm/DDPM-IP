@@ -1,6 +1,7 @@
 import copy
 import functools
 import os
+import pathlib
 import random
 
 import blobfile as bf
@@ -117,8 +118,7 @@ class TrainLoop:
             self.ddp_model = self.model
 
     def _load_and_sync_parameters(self):
-        resume_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
-
+        resume_checkpoint = find_resume_checkpoint(self.resume_checkpoint, self.save_path)
         if resume_checkpoint:
             self.resume_step = parse_resume_step_from_filename(resume_checkpoint)
             # if dist.get_rank() == 0:
@@ -134,7 +134,7 @@ class TrainLoop:
     def _load_ema_parameters(self, rate):
         ema_params = copy.deepcopy(self.mp_trainer.master_params)
 
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
+        main_checkpoint = find_resume_checkpoint(self.resume_checkpoint, self.save_path)
         ema_checkpoint = find_ema_checkpoint(main_checkpoint, self.resume_step, rate)
         if ema_checkpoint:
             # if dist.get_rank() == 0:
@@ -148,7 +148,7 @@ class TrainLoop:
         return ema_params
 
     def _load_optimizer_state(self):
-        main_checkpoint = find_resume_checkpoint() or self.resume_checkpoint
+        main_checkpoint = find_resume_checkpoint(self.resume_checkpoint, self.save_path)
         opt_checkpoint = bf.join(
             bf.dirname(main_checkpoint), f"opt{self.resume_step:06}.pt"
         )
@@ -298,9 +298,40 @@ def get_blob_logdir():
     return logger.get_dir()
 
 
-def find_resume_checkpoint():
+#Find the modelxxxxxx.pt model file that has the largest step, and also has corresponding ema and opt files
+def find_resume_checkpoint(resume_checkpoint, save_path):
     # On your infrastructure, you may want to override this to automatically
     # discover the latest checkpoint on your blob storage, etc.
+    files = [str(file) for file in pathlib.Path(save_path).iterdir() if file.is_file()]
+
+    model_files_step = []
+    for f in files:
+        basename = os.path.split(f)[1]
+        if basename.startswith("model"):
+            model_files_step.append(int(basename.split("model")[1].split(".")[0]))
+
+    model_files_step.sort(reverse=True)
+
+    rate = 0.9999
+
+    if resume_checkpoint == "MAX":
+        for i in range(len(model_files_step)):
+            step = model_files_step[i]
+            model_file = os.path.join(save_path, f"model{step:06}.pt")
+            ema_file = os.path.join(save_path, f"ema_{rate}_{step:06d}.pt")
+            opt_file = os.path.join(save_path, f"opt{step:06}.pt")
+            if os.path.exists(model_file) and os.path.exists(ema_file) and os.path.exists(opt_file):
+                return model_file
+    else:
+        try:
+            step = int(resume_checkpoint)
+            model_file = os.path.join(save_path, f"model{step:06}.pt")
+            ema_file = os.path.join(save_path, f"ema_{rate}_{step:06d}.pt")
+            opt_file = os.path.join(save_path, f"opt{step:06}.pt")
+            if os.path.exists(model_file) and os.path.exists(ema_file) and os.path.exists(opt_file):
+                return model_file
+        except:
+            return None
     return None
 
 
