@@ -5,6 +5,7 @@ numpy array. This can be used to produce samples for FID evaluation.
 
 import argparse
 import os
+import time
 
 import numpy as np
 import torch as th
@@ -44,7 +45,9 @@ def main():
     logger.log("sampling...")
     all_images = []
     all_labels = []
+    time1 = None
     while len(all_images) * args.batch_size < args.num_samples:
+        time1 = time.time()
         model_kwargs = {}
         if args.class_cond:
             classes = th.randint(
@@ -73,7 +76,9 @@ def main():
             ]
             dist.all_gather(gathered_labels, classes)
             all_labels.extend([labels.cpu().numpy() for labels in gathered_labels])
-        logger.log(f"created {len(all_images) * args.batch_size} samples")
+        time2 = time.time()
+        logger.log(f"created {len(all_images) * args.batch_size} samples in {time2 - time1} seconds")
+        time1 = time2
 
     arr = np.concatenate(all_images, axis=0)
     arr = arr[: args.num_samples]
@@ -82,7 +87,7 @@ def main():
         label_arr = label_arr[: args.num_samples]
     if dist.get_rank() == 0:
         shape_str = "x".join([str(x) for x in arr.shape])
-        out_path = os.path.join(logger.get_dir(), f"samples_{shape_str}.npz")
+        out_path = os.path.join(args.save_path, f"samples_{shape_str}.npz")
         logger.log(f"saving to {out_path}")
         if args.class_cond:
             np.savez(out_path, arr, label_arr)
@@ -100,6 +105,7 @@ def create_argparser():
         batch_size=16,
         use_ddim=False,
         model_path="",
+        save_path="",
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()
