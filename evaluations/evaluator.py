@@ -30,6 +30,9 @@ def main():
     parser.add_argument("sample_batch", help="path to sample batch npz file")
     args = parser.parse_args()
 
+    print(f"{tf.sysconfig.get_build_info() = }")
+    print(f"{tf.config.list_physical_devices('GPU') = }")
+    return
     config = tf.ConfigProto(
         allow_soft_placement=True  # allows DecodeJpeg to run on CPU in Inception graph
     )

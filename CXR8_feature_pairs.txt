@@ -1,0 +1,10 @@
+Potential:
+Pair				|	MCC		|	MI
+male, "No Finding" 		|	0.01 => 0.95	|	0.00 => 0.58
+Atelectasis, Effusion 		|	0.17 =>  0.92	|	0.01 => 0.29
+Infiltration, Effusion		|	0.12 => 0.79	|	0.01 => 0.25
+Atelectasis, Infiltration 	|	0.09 => 0.73	|	0.00 => 0.21
+Nodule, Mass			|	0.10 => 0.95	|	0.00 => 0.19
+Pneumothorax, Mass		|	0.03 => 0.96	|	0.00 => 0.18
+Pneumothorax, Nodule		|	0.01 => 0.91	|	0.00 => 0.17
+Consolidation, Pneumothorax	|	0.00 => 0.94	|	0.00 => 0.16 
