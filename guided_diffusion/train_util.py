@@ -3,6 +3,7 @@ import functools
 import os
 import pathlib
 import random
+import time
 
 import blobfile as bf
 import numpy as np
@@ -70,6 +71,7 @@ class TrainLoop:
         self.lr_anneal_steps = lr_anneal_steps
 
         self.step = 0
+        self.step_time = 0
         self.resume_step = 0
         self.global_batch = self.batch_size * dist.get_world_size()
 
@@ -173,8 +175,10 @@ class TrainLoop:
                 batch = data_element[0].type(th.float32) / 127.5 - 1
                 cond = {}
                 #batch, cond = data_element[0].astype(np.float32) / 127.5 - 1, {}
-
+            time1 = time.time()
             self.run_step(batch, cond)
+            time2 = time.time()
+            self.step_time = time2 - time1
             if self.step % self.log_interval == 0:
                 logger.dumpkvs()
             if self.step % self.save_interval == 0:
@@ -244,6 +248,7 @@ class TrainLoop:
             param_group["lr"] = lr
 
     def log_step(self):
+        logger.logkv("step_time", self.step_time)
         logger.logkv("step", self.step + self.resume_step)
         logger.logkv("samples", (self.step + self.resume_step + 1) * self.global_batch)
         logger.logkv("total batch size", self.global_batch)

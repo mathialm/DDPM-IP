@@ -2,6 +2,7 @@ import argparse
 import io
 import os
 import random
+import sys
 import warnings
 import zipfile
 from abc import ABC, abstractmethod
@@ -14,8 +15,11 @@ from typing import Iterable, Optional, Tuple
 import numpy as np
 import requests
 import tensorflow.compat.v1 as tf
+#import tensorflow.compat.v2 as tf
+#import tensorflow as tf
 from scipy import linalg
 from tqdm.auto import tqdm
+import torch
 
 INCEPTION_V3_URL = "https://openaipublic.blob.core.windows.net/diffusion/jul-2021/ref_batches/classify_image_graph_def.pb"
 INCEPTION_V3_PATH = "classify_image_graph_def.pb"
@@ -32,6 +36,12 @@ def main():
 
     print(f"{tf.sysconfig.get_build_info() = }")
     print(f"{tf.config.list_physical_devices('GPU') = }")
+    print(f"{tf.__version__ = }")
+    print(f"{torch.cuda.is_available() = }")
+    print(f"{sys.version = }")
+    print(f"{tf.test.is_gpu_available() = }")
+    print(f"{tf.test.is_built_with_cuda() = }")
+
     return
     config = tf.ConfigProto(
         allow_soft_placement=True  # allows DecodeJpeg to run on CPU in Inception graph

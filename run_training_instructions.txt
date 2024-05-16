@@ -1,0 +1,23 @@
+Make folder "poisoning":
+mkdir poisoning
+
+Unzip:
+unzip ML_Poisoning.zip
+
+Create environments:
+conda create --name ADM --file ADM_spec_file.txt
+conda create --name DIFF --file DIFF_spec_file.txt
+
+Update git (might need specific access from Mathias):
+cd ML_Poisoning/Diffusion_GAN
+git pull 
+cd ../DDPM_IP
+git pull
+
+Run training:
+By default, it runs all 3 (clean and poison 1 + poison 2).
+To only run a single, comment (put # first) before the "setup_single" commands at the bottom (they are in order: clean, poison 1, poison 2)
+To only run with specific array indexes, copy the "ARRAY=1-10" and "export SBATCH_ARRAY_INX=$ARRAY, and alter "1-10" to the indexes you want. X-Y for ranges, and X,Y for individual indexes
+
+./diff_style_gan.sh
+./DDPM-IP.sh

@@ -11,6 +11,7 @@ from PIL import Image
 import numpy as np
 import torch as th
 import torch.distributed as dist
+from tqdm import tqdm
 
 from guided_diffusion import dist_util, logger
 from guided_diffusion.script_util import (
@@ -36,12 +37,15 @@ def main():
     dist_util.setup_dist()
     logger.configure()
 
+    model_path = args.model_path
+    model_name = os.path.basename(model_path).split(".")[0]
+
     os.makedirs(args.save_path, exist_ok=True)
-    out_path = os.path.join(args.save_path, f"samples_{args.num_samples}x64x64x3.npz")
+    out_path = os.path.join(args.save_path, f"{model_name}_samples_{args.num_samples}x64x64x3.npz")
     if os.path.exists(out_path):
         logger.log(f"samples at {out_path} already exist.")
         return
-    model_path = args.model_path
+
     if not os.path.exists(model_path):
         logger.log(f"model at {model_path} did not exist")
         return
@@ -64,48 +68,47 @@ def main():
     logger.log("sampling...")
     all_images = []
     all_labels = []
-    time_full1 = None
-    time_full2 = None
-    while len(all_images) * args.batch_size < args.num_samples:
-        time_full1 = time.time()
-        model_kwargs = {}
-        if args.class_cond:
-            classes = th.randint(
-                low=0, high=NUM_CLASSES, size=(args.batch_size,), device=dist_util.dev()
+
+    with tqdm(total=args.num_samples) as pbar:
+        while len(all_images) * args.batch_size < args.num_samples:
+            model_kwargs = {}
+            if args.class_cond:
+                classes = th.randint(
+                    low=0, high=NUM_CLASSES, size=(args.batch_size,), device=dist_util.dev()
+                )
+                model_kwargs["y"] = classes
+            sample_fn = (
+                diffusion.p_sample_loop if not args.use_ddim else diffusion.ddim_sample_loop
             )
-            model_kwargs["y"] = classes
-        sample_fn = (
-            diffusion.p_sample_loop if not args.use_ddim else diffusion.ddim_sample_loop
-        )
 
-        #######Here is the heavy lifting##########
-        sample = sample_fn(
-            model,
-            (args.batch_size, 3, args.image_size, args.image_size),
-            clip_denoised=args.clip_denoised,
-            model_kwargs=model_kwargs,
-            progress=True,
-            device=dist_util.dev(),
-        )
+            #######Here is the heavy lifting##########
+            sample = sample_fn(
+                model,
+                (args.batch_size, 3, args.image_size, args.image_size),
+                clip_denoised=args.clip_denoised,
+                model_kwargs=model_kwargs,
+                progress=True,
+                device=dist_util.dev(),
+            )
 
-        sample = ((sample + 1) * 127.5).clamp(0, 255).to(th.uint8)
-        sample = sample.permute(0, 2, 3, 1)
-        sample = sample.contiguous()
+            sample = ((sample + 1) * 127.5).clamp(0, 255).to(th.uint8)
+            sample = sample.permute(0, 2, 3, 1)
+            sample = sample.contiguous()
 
 
 
-        gathered_samples = [th.zeros_like(sample) for _ in range(dist.get_world_size())]
-        dist.all_gather(gathered_samples, sample)  # gather not supported with NCCL
-        all_images.extend([sample.cpu().numpy() for sample in gathered_samples])
+            gathered_samples = [th.zeros_like(sample) for _ in range(dist.get_world_size())]
+            dist.all_gather(gathered_samples, sample)  # gather not supported with NCCL
+            all_images.extend([sample.cpu().numpy() for sample in gathered_samples])
 
-        if args.class_cond:
-            gathered_labels = [
-                th.zeros_like(classes) for _ in range(dist.get_world_size())
-            ]
-            dist.all_gather(gathered_labels, classes)
-            all_labels.extend([labels.cpu().numpy() for labels in gathered_labels])
-        timefull_2 = time.time()
-        logger.log(f"created {len(all_images) * args.batch_size} samples in {timefull_2 - time_full1} seconds")
+            if args.class_cond:
+                gathered_labels = [
+                    th.zeros_like(classes) for _ in range(dist.get_world_size())
+                ]
+                dist.all_gather(gathered_labels, classes)
+                all_labels.extend([labels.cpu().numpy() for labels in gathered_labels])
+            #logger.log(f"created {len(all_images) * args.batch_size} samples in {time_full2 - time_full1} seconds")
+            pbar.update(args.batch_size)
 
     arr = np.concatenate(all_images, axis=0)
     arr = arr[: args.num_samples]
