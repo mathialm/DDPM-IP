@@ -27,6 +27,8 @@ from guided_diffusion.script_util import (
     args_to_dict,
 )
 
+BASE = os.path.abspath("../..")
+
 def save_image_grid(img, fname, drange, grid_size):
     img = np.asarray(img, dtype=np.uint8)
     """
@@ -58,11 +60,10 @@ def main():
     attacks = ["clean",
                "poisoning_simple_replacement-High_Cheekbones-Male",
                "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick"]
-    base = r"C:\Users\mathialm\OneDrive - NTNU\Jobb\PhD\Poisoning\results\example_images\CelebA\StyleGAN"
+    base = os.path.join(BASE, "results", "example_images", "CelebA", "StyleGAN")
 
     for attack in attacks:
         data_file_path = os.path.join(base, f"{attack}_6x6_selected_images.npz")
-        #data_file_path = os.path.join(args.save_path, "samples_10000x64x64x3.npz")
         if not os.path.exists(data_file_path):
             logger.log("creating model and diffusion...")
             model, diffusion = create_model_and_diffusion(

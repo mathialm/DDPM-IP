@@ -22,6 +22,8 @@ from guided_diffusion.script_util import (
     args_to_dict,
 )
 
+BASE = os.path.abspath("../..")
+
 th.backends.cuda.matmul.allow_tf32 = True
 attacks = ["clean",
            "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick",
@@ -31,7 +33,12 @@ def main():
     args = create_argparser().parse_args()
 
     if args.convert_to_images:
-        npz_to_images(args.save_path, args.images_path)
+        print("Making images")
+        for attack in attacks:
+            for i in range(1, 11):
+                save_path = os.path.join(BASE, "results", "DDPM-IP", "celeba", "DDPM-IP", attack, "noDef", str(i))
+                save_npz = os.path.join(save_path, "samples_10000x64x64x3.npz")
+                npz_to_images(save_npz, os.path.join(save_path, "images"))
         return
 
     dist_util.setup_dist()
@@ -136,10 +143,12 @@ def npz_to_images(npz_path, images_path):
     _N, H, W, C = images_npz.shape
     images = images_npz.transpose(0, 1, 2, 3)
     print(f"{images.shape = }")
-    for i, image in enumerate(images):
-        fname = os.path.join(images_path, f"{i+1:06}.png")
-        Image.fromarray(image, 'RGB').save(fname)
-        print(f"Converting npz to file {fname}", end="\r")
+    with tqdm(total=len(images)) as pbar:
+        for i, image in enumerate(images):
+            fname = os.path.join(images_path, f"{i+1:06}.png")
+            Image.fromarray(image, 'RGB').save(fname)
+            #print(f"Converting npz to file {fname}", end="\r")
+            pbar.update(1)
 
 def create_argparser():
     defaults = dict(

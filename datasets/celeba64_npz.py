@@ -6,6 +6,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
 
+BASE = os.path.abspath("../..")
 
 #Only use on personal computer
 def imgs_to_npz(base_folder, save_folder, filename):
@@ -13,7 +14,7 @@ def imgs_to_npz(base_folder, save_folder, filename):
 
 
     images = [str(image) for image in pathlib.Path(base_folder).iterdir() if image.is_file()]
-
+    print(len(images))
     for i, img in enumerate(images):
         img_arr = cv2.imread(img)
         img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)  # cv2默认为 bgr 顺序
@@ -44,12 +45,16 @@ if __name__ == '__main__':
     attacks = ["clean",
                "poisoning_simple_replacement-High_Cheekbones-Male",
                "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick"]
-    base = r"C:\Users\mathialm\OneDrive - NTNU\Jobb\PhD\Poisoning\results\example_images\CelebA\StyleGAN"
-    print(f"{os.path.exists(base) = }")
+    base = os.path.join(BASE, "data", "datasets64")
     for attack in attacks:
-        data_root = rf"{base}\{attack}\selected"
-        print(f"{os.path.exists(data_root) = }")
-        save_folder = base
-        filename = f"{attack}_6x6_selected_images.npz"
+        data_root = os.path.join(base, attack, "celeba", "img_align_celeba")
+
+        save_folder = os.path.join(data_root, "..")
+        filename = f"celeba64_train.npz"
+        save_file = os.path.join(data_root, "..", filename)
+
+        if os.path.exists(save_file):
+            print(f"{save_file} already exists, continuing")
+            continue
         imgs_to_npz(data_root, save_folder, filename)
     #show_images()

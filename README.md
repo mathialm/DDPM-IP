@@ -1,4 +1,69 @@
- [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/input-perturbation-reduces-exposure-bias-in/image-generation-on-ffhq-128-x-128)](https://paperswithcode.com/sota/image-generation-on-ffhq-128-x-128?p=input-perturbation-reduces-exposure-bias-in)
+## Using DDPM-IP in associative poisoning
+At the end of this README is the original README of the DDPM-IP repository.
+
+In this first part will be the different commands we used for this model. If some parts are left out, assume that the procedure are the same as in the original paper.
+
+###Command for training (on slurm)
+```
+mpiexec -launcher slurm -hosts $(hostname) -n `<num_gpus>` \
+python scripts/image_train.py --input_pertub 0.1 \
+--data_dir <data_dir> \
+--save_path <model_dir> \
+--log_path <log_path> \
+--image_size 64 --use_fp16 True --num_channels 192 \
+--num_head_channels 64 --num_res_blocks 3 \
+--attention_resolutions 32,16,8 --resblock_updown True \
+--use_new_attention_order True \
+--learn_sigma True --dropout 0.1 --diffusion_steps 1000 \
+--noise_schedule cosine --use_scale_shift_norm True \
+--rescale_learned_sigmas True --schedule_sampler loss-second-moment \
+--lr 1e-4 --batch_size 16 --save_interval 100000 \
+--resume_checkpoint MAX --lr_anneal_steps <steps>
+```
+
+`<model_dir>`: where the model will be saved. In this paper we used: 
+`../models/DDPM-IP/celeba/DDPM-IP/<attack>/noDef/<index>`
+
+`<log_path>` : where the log file is located
+
+`<attack>`: "clean", "poisoning_simple_replacement-Mouth_Slightly_Open-Wearing_Lipstick", or "poisoning_simple_replacement-High_Cheekbones-Male"
+
+`<index>` : values 1-10, depending on which model is training
+
+`<data_dir>` : where the training data is located, in our paper is `../data/datasets64/<attack>/celeba`
+
+`<num_gpus>` : number of gpus reserved for training
+
+`<steps>` : the number iterations the model uses (i.e., how many batches)
+
+
+###Command for generating images
+```
+python scripts/image_sample.py --image_size 64 \
+--timestep_respacing 100 --model_path <model_path> \
+--save_path <images_path> --use_fp16 True --num_channels 192 \
+--num_head_channels 64 --num_res_blocks 3 \
+--attention_resolutions 32,16,8 --resblock_updown True \
+--use_new_attention_order True --learn_sigma True --dropout 0.1 \
+--diffusion_steps 1000 --noise_schedule cosine \
+--use_scale_shift_norm True --rescale_learned_sigmas True \
+--batch_size 128 --num_samples <num_samples> --use_ddim True
+```
+
+`<model_dir>`: model to be used for generating. In this paper we used: 
+`../models/DDPM-IP/celeba/DDPM-IP/<attack>/noDef/<index>`
+
+`<images_path>` : path where the image .npz will be saved
+
+`<num_samples>` : the number of samples to generate
+
+
+
+
+#####################################################
+
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/input-perturbation-reduces-exposure-bias-in/image-generation-on-ffhq-128-x-128)](https://paperswithcode.com/sota/image-generation-on-ffhq-128-x-128?p=input-perturbation-reduces-exposure-bias-in)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/input-perturbation-reduces-exposure-bias-in/image-generation-on-celeba-64x64)](https://paperswithcode.com/sota/image-generation-on-celeba-64x64?p=input-perturbation-reduces-exposure-bias-in)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/input-perturbation-reduces-exposure-bias-in/image-generation-on-lsun-tower-64x64)](https://paperswithcode.com/sota/image-generation-on-lsun-tower-64x64?p=input-perturbation-reduces-exposure-bias-in)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/input-perturbation-reduces-exposure-bias-in/image-generation-on-imagenet-32x32)](https://paperswithcode.com/sota/image-generation-on-imagenet-32x32?p=input-perturbation-reduces-exposure-bias-in)
